@@ -1,5 +1,4 @@
 from numiphy.lowlevelsupport import *
-from typing import Any
 from ._solvers import _LowLevelSolver, _LowLevelSolver1D, RootResult #type: ignore
 
 

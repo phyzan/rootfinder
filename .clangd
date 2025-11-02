@@ -12,6 +12,7 @@ CompileFlags:
     - "-fopenmp"
     - "-fno-math-errno"
     - "-I/home/senpy/Documents/repos/rootfinder"
+    - "-I/home/senpy/Documents/repos/rootfinder/include"
     - "-I/usr/include/python3.12"
     - "-I/usr/include/pybind11"
   CompilationDatabase: python/
