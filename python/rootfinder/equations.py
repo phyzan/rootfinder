@@ -4,7 +4,7 @@ from ._solvers import _LowLevelSolver, _LowLevelSolver1D, RootResult #type: igno
 
 class SymbolicEquationSystem(CompileTemplate):
     
-    def __init__(self, f: Iterable[Expr], x: Iterable[Symbol], args: Iterable[Symbol] = ()):
+    def __init__(self, f: Iterable[Expr], x: Iterable[Symbol], args: Iterable[Symbol] = (), module_name: str = None, directory: str = None):
         '''
         f: system of equations
         x: list of variables to solve
@@ -14,6 +14,7 @@ class SymbolicEquationSystem(CompileTemplate):
         self.x = tuple(x)
         self.args = tuple(args)
         assert (len(f) == len(x))
+        CompileTemplate.__init__(self, module_name, directory)
     
     @property
     def Nsys(self):
@@ -29,7 +30,7 @@ class SymbolicEquationSystem(CompileTemplate):
     
     @cached_property
     def lowlevel_callables(self)->tuple[LowLevelCallable, ...]:
-        return [TensorLowLevelCallable(self.f, q = self.x, args = self.args), TensorLowLevelCallable(self.jacobian, q = self.x, args = self.args)]
+        return [TensorLowLevelCallable(self.f, x = self.x, args = self.args), TensorLowLevelCallable(self.jacobian, x = self.x, args = self.args)]
     
     def dataset_dims(self, x0: np.ndarray, args: np.ndarray)->int:
         '''
@@ -78,8 +79,8 @@ class SymbolicEquationSystem(CompileTemplate):
 
 class EquationSystem(SymbolicEquationSystem, _LowLevelSolver):
 
-    def __init__(self, f: Iterable[Expr], x: Iterable[Symbol], args: Iterable[Symbol] = ()):
-        SymbolicEquationSystem.__init__(self, f, x, args)
+    def __init__(self, f: Iterable[Expr], x: Iterable[Symbol], args: Iterable[Symbol] = (), module_name: str = None, directory: str = None):
+        SymbolicEquationSystem.__init__(self, f, x, args, module_name=module_name, directory=directory)
         _LowLevelSolver.__init__(self, *self.pointers, self.Nsys, self.Nargs)
 
     def newton_raphson(self, x0, args, ftol=1e-8, xtol=1e-8, max_iter=100)->RootResult:
@@ -89,8 +90,8 @@ class EquationSystem(SymbolicEquationSystem, _LowLevelSolver):
 
 class Equation(SymbolicEquationSystem, _LowLevelSolver1D):
 
-    def __init__(self, f: Expr, x: Expr, args: Iterable[Symbol] = ()):
-        SymbolicEquationSystem.__init__(self, [f], [x], args)
+    def __init__(self, f: Expr, x: Expr, args: Iterable[Symbol] = (), module_name: str = None, directory: str = None):
+        SymbolicEquationSystem.__init__(self, [f], [x], args, module_name=module_name, directory=directory)
         _LowLevelSolver1D.__init__(self, *self.pointers, self.Nargs)
 
     def newton_raphson(self, x0, args, ftol=1e-8, xtol=1e-8, max_iter=100)->RootResult:

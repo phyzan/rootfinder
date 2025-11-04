@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -march=x86-64 -O3 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -fno-math-errno")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -march=x86-64 -O3 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Wno-unused-parameter -fno-math-errno")
 
 # Find Python + Pybind11
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)

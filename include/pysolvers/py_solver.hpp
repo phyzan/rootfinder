@@ -6,6 +6,7 @@
 
 namespace py = pybind11;
 
+
 template<typename T>
 py::array_t<T> array(T* data, const std::vector<py::ssize_t>& shape){
     py::capsule capsule = py::capsule(data, [](void* r){T* d = reinterpret_cast<T*>(r); delete[] d;});
