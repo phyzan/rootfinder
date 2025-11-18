@@ -113,7 +113,7 @@ RootResult newton_raphson(Scalar* x, Scalar* y, Scalar* dx, Scalar* x_like_tmp, 
             norm_f += y[i]*y[i];
         }
 
-        if (sqrt(norm_dx) < xtol && sqrt(norm_f) < ftol){
+        if (sqrt(norm_dx) < xtol || sqrt(norm_f) < ftol){
             converged = true;
             iter++;
             break;
@@ -135,9 +135,10 @@ RootResult1D<Scalar> newton_raphson1D(func_t<Scalar> f, func_t<Scalar> f_jac, Sc
     for (iter=0; iter<max_iter; iter++){
         f(&y, &x, obj);
         f_jac(&jac, &x, obj);
-        x += y/jac;
+        dx += y/jac;
+        x += dx;
 
-        if (sqrt(abs(dx)) < xtol && sqrt(abs(y)) < ftol){
+        if (abs(dx) < xtol || abs(y) < ftol){
             converged = true;
             iter++;
             break;
