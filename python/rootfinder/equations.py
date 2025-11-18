@@ -24,14 +24,6 @@ class SymbolicEquationSystem(CompileTemplate):
     def Nargs(self):
         return len(self.args)
     
-    @cached_property
-    def jacobian(self):
-        return [[self.f[i].diff(self.x[j]) for j in range(self.Nsys)] for i in range(self.Nsys)]
-    
-    @cached_property
-    def lowlevel_callables(self)->tuple[LowLevelCallable, ...]:
-        return [TensorLowLevelCallable(self.f, x = self.x, args = self.args), TensorLowLevelCallable(self.jacobian, x = self.x, args = self.args)]
-    
     def dataset_dims(self, x0: np.ndarray, args: np.ndarray)->int:
         '''
         Solve the system of equations using the Newton-Raphson method
@@ -41,7 +33,7 @@ class SymbolicEquationSystem(CompileTemplate):
         x0 (array)  : Initial guess. If the array is 2D, then for each initial guess, a different set of args can be provided.
         args (array): Extra parameters to be passed in the equations. Must be given in the same order as in the initialization.
             An array of args may also be passed, as long as for each set of args, an extra initial guess has been provided in x0
-        ftol, xtol: absolute tolerances
+        xtol, ftol: absolute tolerances
         max_iter: Maximum number of Newton-Raphson iterations
 
         Returns
@@ -81,21 +73,34 @@ class EquationSystem(SymbolicEquationSystem, _LowLevelSolver):
 
     def __init__(self, f: Iterable[Expr], x: Iterable[Symbol], args: Iterable[Symbol] = (), module_name: str = None, directory: str = None):
         SymbolicEquationSystem.__init__(self, f, x, args, module_name=module_name, directory=directory)
-        _LowLevelSolver.__init__(self, *self.pointers, self.Nsys, self.Nargs)
+        _LowLevelSolver.__init__(self, *self.pointers[:2], self.Nsys, self.Nargs)
 
-    def newton_raphson(self, x0, args, ftol=1e-8, xtol=1e-8, max_iter=100)->RootResult:
+    def newton_raphson(self, x0, args, *, xtol=1e-8, ftol=1e-8, max_iter=100)->RootResult:
         dataset_dims = self.dataset_dims(x0, args)
-        return self._newton_raphson(x0, args, dataset_dims, ftol, xtol, max_iter)
+        return self._newton_raphson(x0, args, dataset_dims, xtol, ftol, max_iter)
+    
+    @cached_property
+    def jacobian(self):
+        return [[self.f[i].diff(self.x[j]) for j in range(self.Nsys)] for i in range(self.Nsys)]
+    
+    @cached_property
+    def lowlevel_callables(self)->tuple[LowLevelCallable, ...]:
+        # can be overridden in subclasses, as long as the first 2 are f and jacobian
+        return tuple([TensorLowLevelCallable(self.f, x = self.x, args = self.args), TensorLowLevelCallable(self.jacobian, x = self.x, args = self.args)])
 
 
 class Equation(SymbolicEquationSystem, _LowLevelSolver1D):
 
-    def __init__(self, f: Expr, x: Expr, args: Iterable[Symbol] = (), module_name: str = None, directory: str = None):
+    def __init__(self, f: Expr, x: Expr, args: Iterable[Symbol] = (), converge_funcs: Iterable[Expr] = (), module_name: str = None, directory: str = None):
+        self._converge_funcs = tuple(converge_funcs)
         SymbolicEquationSystem.__init__(self, [f], [x], args, module_name=module_name, directory=directory)
-        _LowLevelSolver1D.__init__(self, *self.pointers, self.Nargs)
-
-    def newton_raphson(self, x0, args, ftol=1e-8, xtol=1e-8, max_iter=100)->RootResult:
-        x0 = np.array(x0)[..., np.newaxis]
-        dataset_dims = self.dataset_dims(x0, args)
-        res = self._newton_raphson(x0, args, dataset_dims, ftol, xtol, max_iter)
-        return RootResult(res.root.squeeze(axis=-1), res.iters, res.success)
+        _LowLevelSolver1D.__init__(self, *self.pointers[:2], self.pointers[2:], self.Nargs)
+    
+    @cached_property
+    def lowlevel_callables(self)->tuple[ScalarLowLevelCallable, ...]:
+        res = tuple([ScalarLowLevelCallable(self.f[0], self.x[0], args=self.args), ScalarLowLevelCallable(self.jacobian, self.x[0], args=self.args)]) + tuple(ScalarLowLevelCallable(func, x=self.x, args=self.args) for func in self._converge_funcs)
+        return res
+    
+    @cached_property
+    def jacobian(self):
+        return self.f[0].diff(self.x[0])
