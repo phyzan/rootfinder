@@ -15,6 +15,25 @@ py::array_t<T> array(T* data, const std::vector<py::ssize_t>& shape){
     return py::array_t<T>(shape, data, capsule);
 }
 
+
+struct PyAuxStruct{
+    py::function f;
+    py::function jac;
+    py::tuple py_args;
+};
+
+template<typename T>
+void py_func(const T& x, const T* args, const void* obj){
+    const auto* py_obj =reinterpret_cast<const PyAuxStruct*>(obj);
+    return py_obj->f(x, *py_obj->py_args);
+}
+
+template<typename T>
+void py_jac(const T& x, const T* args, const void* obj){
+    const auto* py_obj =reinterpret_cast<const PyAuxStruct*>(obj);
+    return py_obj->jac(x, *py_obj->py_args);
+}
+
 template<typename T>
 std::vector<ScalarFunc<T>> recast_py_pointers(const py::iterable& py_funcs){
     std::vector<ScalarFunc<T>> res;

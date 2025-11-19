@@ -214,6 +214,8 @@ class Solver1D{
 
 public:
 
+    Solver1D() = default;
+
     Solver1D(ScalarFunc<T> f, ScalarFunc<T> jac, const ScalarFunc<T>* obj_fun, int n_obj_fun) : _f(f), _jac(jac), _obj_funcs(obj_fun, obj_fun+n_obj_fun){}
 
     Solver1D(ScalarFunc<T> f, ScalarFunc<T> jac, const std::vector<ScalarFunc<T>>& obj_funcs) : _f(f), _jac(jac), _obj_funcs(obj_funcs){}
