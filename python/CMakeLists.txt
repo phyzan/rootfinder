@@ -15,8 +15,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -march=x86-64 -O3 -Wall -Wextra
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
-# Include directories - use parent directory for headers
-include_directories(${CMAKE_SOURCE_DIR}/../include)
+# Include directories - use parent directory (root) for headers
+include_directories(${CMAKE_SOURCE_DIR}/..)
 
 # Build Python module
 pybind11_add_module(_solvers src/py_solver.cpp)
